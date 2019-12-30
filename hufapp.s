@@ -1,4 +1,5 @@
 .global hufapp
+.global setbit
 
 .extern write_str
 
