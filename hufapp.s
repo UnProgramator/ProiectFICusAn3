@@ -4,6 +4,7 @@
 
 .data
 .balign 4
+setbit: .word   0x1, 0x2, 0x4, 0x8,0x10, 0x20, 0x40, 0x80,0x100, 0x200, 0x400, 0x800,0x1000, 0x2000, 0x4000, 0x8000,0x10000, 0x20000, 0x40000, 0x80000,0x100000, 0x200000, 0x400000, 0x800000,0x1000000, 0x2000000, 0x4000000, 0x8000000,0x10000000, 0x20000000, 0x40000000, 0x80000000
 
 .text 
 hufapp:
@@ -18,7 +19,7 @@ hufapp:
     ldr r4, [r3, r0] //;k = index[i]
     
     mov r8, r2 // r8 <- copy of n
-    rsh r8, #1
+    lsr r8, #1
     
     //;while i <= (n >> 1)
     while: 
@@ -28,7 +29,7 @@ hufapp:
         //if (j = i<<1) < n && (nprob[index[j]] > nrpob[index[j+1]])
         //(j = i<<1) < n
         mov r5, r3 // j = i
-        lsh r5, #1 // j = i << 1
+        lsl r5, #1 // j = i << 1
         cmp r5, r2 // j < n
         bge fi1
         //(nprob[index[j]] > nrpob[index[j+1]])
