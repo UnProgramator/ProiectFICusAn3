@@ -77,7 +77,7 @@ ralloc:
         b lop_ralloc
         fin_ralloc:
     
-    pop{lr}
+    pop {lr}
     bx lr
     
 lvector:

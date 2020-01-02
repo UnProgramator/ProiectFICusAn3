@@ -38,10 +38,10 @@ hufenc:
     add r5, #1 
     
     //if (k>hcode->nch || k<1) nerror("ich out of range in hufenc.");
-    ldr r6, [r4, 16]
+    ldr r6, [r4, #16]
     cmp r5, r6
     bgt true1
-    cmp k, #1
+    cmp r5, #1
     bge not1
     true1: //if true
         push {r0-r4}
@@ -51,7 +51,7 @@ hufenc:
     not1:
     
     //for n=hcode->ncode[k]-1
-    ldr r6, [r4, 4]
+    ldr r6, [r4, #4]
     ldr r6, [r6, r5]
     sub r6, #1
     
@@ -87,23 +87,23 @@ hufenc:
         bne realloc_succes
             ldr r0, =wordmessage4
             bl write_str
-            pop{r0-r8}
-            pop{lr} //un fel de break la functie
+            pop {r0-r8}
+            pop {lr} //un fel de break la functie
             bx lr
         realloc_succes:
-        pop{r0-r8}
+        pop {r0-r8}
         str r9, [r1]
     
     not4:
     
     //l = *nb & 7
     ldr r8, [r3]
-    adn r8, #7
+    and r8, #7
     //if (!l) then *(codep)[nc]=0;
-    cmp l, #0
+    cmp r8, #0
     bne not2
         ldr r10, [r1]
-        xor r9, r9, r9
+        mov r9, #0
         str r9, [r10, r7]
     not2:
     
@@ -113,13 +113,13 @@ hufenc:
     ldr r10, =setbit
     ldr r10, [r10, r6]
     and r9, r9, r10
-    cmp r9, 0
+    cmp r9, #0
     beq not3
         ldr r9, [r1]
         ldr r9, [r9, r7]
         ldr r10, =setbit
         ldr r10, [r0, r8]
-        or r9, r9, r10
+        orr r9, r9, r10
         ldr r10, [r1]
         str r9, [r10, r7]
     not3:
