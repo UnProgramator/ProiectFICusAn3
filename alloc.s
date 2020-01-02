@@ -4,6 +4,12 @@
 .global alloc
 .type global, %function
 
+.global lvector
+.type lvector, %function
+
+.global ralloc
+.type global, %function
+
 .data 
 .balign 4
 stackp: .word 0
@@ -21,17 +27,73 @@ alloc: //;r0 -nr de biti de alocat si rezultatul returnat
     mov r0, #0 //;daca nu mai am memorie suficienta
     b fin
 
-if_not: //am memorie
-    add r2, r0
-    str r2, [r1]
-    ldr r1, =heapspace
-    ldr r3, =stackp
-    ldr r2, [r3]
-    add r1,r1,r2
-    add r2, r0
-    str r2, [r3]
-    mov r0, r1
+    if_not: //am memorie
+        add r2, r0
+        str r2, [r1]
+        ldr r1, =heapspace
+        ldr r3, =stackp
+        ldr r2, [r3]
+        add r1, r1, r2 // &heapspace + stack_top
+        add r2, r2, r0 // stack_top += space_needed
+        str r2, [r3]
+        mov r0, r1
+        
+    fin:
+        bx lr
+//end of alloc
+
+ralloc:
+    push {lr}
+    //r0 last address
+    //r1 last address size
+    //r2 new address size
+    add r5, r0, r1
+    ldr r6, =stackp
+    ldr r6, [r6]
+    cmp r6, r5 //verifica daca mai e spatiu dupa vectorul deja alocat
+    bgt real
+        sub r5, r2, r1
+        add r6, r6, r5
+        ldr r7, =stackp
+        str r6, [r7]
+        pop {lr}
+        bx lr
+        
+    real:
+        mov r3, r0
+        mov r0, r2
+        push {r1-r3}
+        bl alloc
+        pop {r1-r3}
+        mov r5, #0
+        mov r4, r0
+        //copiez vechile valori
+        lop_ralloc:
+        cmp r5, r1
+        beq fin_ralloc
+            ldr r6, [r3,r5]
+            str r6, [r4,r5]
+        add r5, #1
+        b lop_ralloc
+        fin_ralloc:
     
-fin:
+    pop {lr}
     bx lr
     
+lvector:
+    push {lr}
+    // no_start -> r0
+    // no_fin   -> r1
+    
+    push {r0}
+    
+    sub r0, r1, r0 // r0 = no_fin - no_start
+    bl alloc
+    
+    mov r1, r0
+    pop {r0}
+    sub r0, r0, r1 // r0 = r0 - no_start
+    
+    pop {lr}
+    bx lr
+//end of lvector
