@@ -1,5 +1,6 @@
 .global hufmak
 
+
 .extern write_str
 .extern setbit[data]
 .extern hufapp
@@ -7,7 +8,7 @@
 
 .data
 .balign 4
-setbit: .word   0x1, 0x2, 0x4, 0x8,0x10, 0x20, 0x40, 0x80,0x100, 0x200, 0x400, 0x800,0x1000, 0x2000, 0x4000, 0x8000,0x10000, 0x20000, 0x40000, 0x80000,0x100000, 0x200000, 0x400000, 0x800000,0x1000000, 0x2000000, 0x4000000, 0x8000000,0x10000000, 0x20000000, 0x40000000, 0x80000000
+/*setbit: .word   0x1, 0x2, 0x4, 0x8,0x10, 0x20, 0x40, 0x80,0x100, 0x200, 0x400, 0x800,0x1000, 0x2000, 0x4000, 0x8000,0x10000, 0x20000, 0x40000, 0x80000,0x100000, 0x200000, 0x400000, 0x800000,0x1000000, 0x2000000, 0x4000000, 0x8000000,0x10000000, 0x20000000, 0x40000000, 0x80000000*/
 .text
 hufmak:
 	//; in ordine nfreq[] -> r0 -> [sp+8]
@@ -25,30 +26,30 @@ hufmak:
 	//;					ibit	-> [sp] -> r1
 	//;					n		-> [sp+4] ->r2
 	stmdb sp!, {r0-r12,lr}  //push r0-r1,lr
-	sub sp,sp,#8		   //rezervam 2 locati pt ibit, n		
+	sub sp,sp,#8		   //rezervam 2 locati pt ibit, n
 	str r1,[r4, #+16] //hcode->nch=nchin;
 	
 	//index=lvector(1,(long)(2*hcode->nch-1))
 	ldr r0, [sp, #+12]  // aloca 4 byte in plus
 	lsl r0,#3
-	bl alloc
+	bl alloc 
 	mov r10,r0
 	
 	//up=(long *)lvector(1,(long)(2*hcode->nch-1)); 
 	ldr r0, [sp, #+12]   // aloca 4 byte in plus
 	lsl r0,#3
-	bl alloc
+	bl alloc 
 	mov r9,r0
 	
 	//nprob=lvector(1,(long)(2*hcode->nch-1));
 	ldr r0, [sp, #+12]  // aloca 4 byte in plus
 	lsl r0,#3
-	bl alloc
+	bl alloc  
 	mov r11,r0
 	
 	//for (nused=0,j=1;j<=hcode->nch;j++)
 	mov r8, #0
-	mov r6,#1
+	mov r6, #1
 	ldr r0, [sp, #+8]	// nfreq in r0 
 	ldr r2, [r4] 		// hcode->icod in r2
 	ldr r3, [r4, #+4]	// hcode->ncod in r3
@@ -56,6 +57,7 @@ for1:
 	ldr r12,[r4,#+16]
 	cmp r6,r12
 	bgt endfor1
+	
 	//nprob[j]=nfreq[j]
 	ldr r1, [r0,+r6]
 	str r1, [r11,+r6]
@@ -86,7 +88,7 @@ for2:
 	mov r2,r8
 	mov r3,r6
 	bl hufapp
-	sub r6,r6,#1
+	sub r6,r6,#1 
 	b for2
 endfor2:
 	//k=hcode->nch;
@@ -94,16 +96,16 @@ endfor2:
 	
 	//while (nused > 1)
 while1:
-	cmp r8,#1
+	cmp r8, #1
 	ble endwhile1
 	
 	//node=index[1];
 	ldr r5, [r10,#+4]
 	
 	//index[1]=index[nused--];
-	sub r8,#1
-	ldr r0, [r10, +r8, LSL #4]
+	ldr r0, [r10, +r8, LSL #2]
 	str r0, [r10,#+4]
+	sub r8, #1
 	
 	//hufapp(index,nprob,nused,1);
 	mov r0,r10
@@ -161,6 +163,7 @@ for3:
 	ldr r12,[r1, +r6, LSL #2]
 	cmp r0,r12
 	bne endif2
+	
 	//for (n=0,ibit=0,node=up[j];node;node=up[node],ibit++)
 	mov r1,#0	//n in r1
 	mov r2,#0	// ibit in r2
@@ -193,7 +196,7 @@ endif2:
 	add r6,#1
 	b for3
 endfor3:
-	//*nlong=0;
+	// *nlong=0;
 	ldr r3,[sp,#+20]
 	str r0,[r3]
 	
@@ -209,10 +212,10 @@ for5:
 	ldr r12,[r3]
 	cmp r2, r12
 	ble endif4
-	//*nlong=hcode->ncod[j];
+	// *nlong=hcode->ncod[j];
 	str r2, [r3]
 	
-	//*ilong=j-1;
+	// *ilong=j-1;
 	sub r0, r6, #1
 	ldr r2, [sp, #16]
 	str r0, [r2]

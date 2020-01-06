@@ -25,17 +25,17 @@ hufenc:
     **codep -> r1
     *lcode  -> r2
     *nb     -> r3
-    *hcode  -> r4 //pop de pe stiva
+    *hcode  -> r4 
     
     k       -> r5
     n       -> r6 in for
     nc      -> r7 in for
     l       -> r8 in the last 2 statements of for*/
-    pop {r4}
     push {lr}
+    push {r5-r10}
+    
     //k=ich+1
-    mov r5, r0
-    add r5, #1 
+    add r5, r1, #1
     
     //if (k>hcode->nch || k<1) nerror("ich out of range in hufenc.");
     ldr r6, [r4, #16]
@@ -52,7 +52,7 @@ hufenc:
     
     //for n=hcode->ncode[k]-1
     ldr r6, [r4, #4]
-    ldr r6, [r6, r5]
+    ldr r6, [r6, r5, lsl #2]
     sub r6, #1
     
     test_for: // n>=0 => if n<0 then break
@@ -76,7 +76,7 @@ hufenc:
         lsr r9, #1
         add r9, r8, r9
         str r9, [r2]
-        push {r0-r8}
+        push {r0-r8} // *1
         mov r0, r1
         mov r1, r8
         mov r2, r9
@@ -87,7 +87,9 @@ hufenc:
         bne realloc_succes
             ldr r0, =wordmessage4
             bl write_str
-            pop {r0-r8}
+            pop {r0-r8}  // *1
+            
+            pop {r5-r10}
             pop {lr} //un fel de break la functie
             bx lr
         realloc_succes:
@@ -99,41 +101,42 @@ hufenc:
     //l = *nb & 7
     ldr r8, [r3]
     and r8, #7
-    //if (!l) then *(codep)[nc]=0;
+    //if (!l) then (*codep)[nc]=0;
     cmp r8, #0
     bne not2
         ldr r10, [r1]
         mov r9, #0
-        str r9, [r10, r7]
+        str r9, [r10, r7, lsl #2]
     not2:
     
     // if hcode->icode[k] & setbit[n] then (*codep)[n] |= setbit[l]
     ldr r9, [r4]
-    ldr r9, [r9, r5]
+    ldr r9, [r9, r5, lsl #2]
     ldr r10, =setbit
-    ldr r10, [r10, r6]
+    ldr r10, [r10, r6, lsl #2]
     and r9, r9, r10
     cmp r9, #0
     beq not3
         ldr r9, [r1]
-        ldr r9, [r9, r7]
+        ldr r9, [r9, r7, lsl #2]
         ldr r10, =setbit
-        ldr r10, [r0, r8]
+        ldr r10, [r0, r8, lsl #2]
         orr r9, r9, r10
         ldr r10, [r1]
-        str r9, [r10, r7]
+        str r9, [r10, r7, lsl #2]
     not3:
     
     increment:
          // n--, ++(*nb)
          sub r6, #1 //n--
          ldr r8, [r3]
-         add r8, #1
+         add r8, #1 //++(*nb)
          str r8, [r3]
          b test_for
     
     end_for:
     
+    pop {r5-r10}
     pop {lr}
     bx lr
     

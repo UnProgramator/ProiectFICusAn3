@@ -21,14 +21,14 @@ hufdec:
 	//for(;;)
 loop:
 	// nc=(*nb >> 3);
-	ldr r6,[r3]
+	ldr r6,[r3] 
 	LSR r6,#3
 	
 	//if (++nc > lcode) 
 	add r6,#1
 	cmp r6,r2
 	ble endif1
-	//*ich=hcode->nch;
+	// *ich=hcode->nch;
 	ldr r7, [r4,#+16]
 	str r7, [r0]
 	
@@ -44,7 +44,7 @@ endif1:
 	ldrb r7,[r8,+r7]
 	ldrb r8,[r1,+r6]
 	and r7,r8
-	cmp r7,#0
+	cmp r7,#0 
 	ldrne r7,[r4,#+12]
 	ldreq r7,[r4,#+8]
 	ldr r5,[r7,+r5]
@@ -54,7 +54,7 @@ endif1:
 	cmp r5,r8
 	bgt loop
 	
-	//*ich=node-1;
+	// *ich=node-1;
 	sub r5,#1
 	str r5, [r0]
 	

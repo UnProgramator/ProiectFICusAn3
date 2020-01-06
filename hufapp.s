@@ -22,6 +22,7 @@ hufapp:
     //            j     -> r5
     
     push {lr}
+    push {r6-r8}
     ldr r4, [r3, r0] //;k = index[i]
     
     mov r8, r2 // r8 <- copy of n
@@ -39,11 +40,11 @@ hufapp:
         cmp r5, r2 // j < n
         bge fi1
         //(nprob[index[j]] > nrpob[index[j+1]])
-        ldr r6, [r0,r5] //index[j]
-        ldr r6, [r1,r6] //nprob[index[j]]
+        ldr r6, [r0,r5, lsl #2] //index[j]
+        ldr r6, [r1,r6, lsl #2] //nprob[index[j]]
         add r5, #1 //j++
-        ldr r7, [r0,r5] //index[j+1]
-        ldr r7, [r1,r7] //nprob[index[j+1]]
+        ldr r7, [r0,r5, lsl #2] //index[j+1]
+        ldr r7, [r1,r7, lsl #2] //nprob[index[j+1]]
         cmp r6, r7
         bgt fi1 //if both condition are true, then j is already j++
         
@@ -53,19 +54,20 @@ hufapp:
         fi1: //end of first if
         
         // if nprob[k] <= nprob[index[j]]
-        ldr r6, [r1,r4] //r6 <- nprob[k]
-        ldr r7, [r0,r5] //r7 <- index[j]
-        ldr r7, [r1,r7] //r7 <- nprob[index[j]]
+        ldr r6, [r1,r4, lsl #2] //r6 <- nprob[k]
+        ldr r7, [r0,r5, lsl #2] //r7 <- index[j]
+        ldr r7, [r1,r7, lsl #2] //r7 <- nprob[index[j]]
         cmp r6, r7
         ble end // if statement true then break
-        ldr r7, [r0,r5] //r7 <- index[j]
-        str r7, [r0,r3] //r7 -> index[i]
+        ldr r7, [r0,r5, lsl #2] //r7 <- index[j]
+        str r7, [r0,r3, lsl #2] //r7 -> index[i]
         mov r3, r5      //i = j
         
     end:
     
-    str r4, [r0,r3] // index[i] = k
+    str r4, [r0,r3, lsl #2] // index[i] = k
     
+    pop {r6-r8}
     pop {lr}
     bx lr
 //end of hufapp

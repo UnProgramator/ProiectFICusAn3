@@ -1,6 +1,3 @@
-.extern heapspace [data]
-.extern write_str
-
 .global alloc
 .type global, %function
 
@@ -15,10 +12,13 @@
 stackp: .word 0
 memspace: .word 65536
 merror: .asciz "Memrie insuficienta\r\n"
+heapspace: .skip 65536 //;spatiul pentru memoria heap
+
 
 
 .text
 alloc: //;r0 -nr de biti de alocat si rezultatul returnat
+    push {lr}
     ldr r1, =memspace
     ldr r2, [r1]
     cmp r0, r2
@@ -39,6 +39,7 @@ alloc: //;r0 -nr de biti de alocat si rezultatul returnat
         mov r0, r1
         
     fin:
+        pop {lr}
         bx lr
 //end of alloc
 
@@ -88,6 +89,7 @@ lvector:
     push {r0}
     
     sub r0, r1, r0 // r0 = no_fin - no_start
+    lsl r0, #2
     bl alloc
     
     mov r1, r0
