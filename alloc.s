@@ -94,7 +94,7 @@ lvector:
     
     mov r1, r0
     pop {r0}
-    sub r0, r0, r1 // r0 = r0 - no_start
+    sub r0, r1, r0 // r0 = mem_aloc - no_start
     
     pop {lr}
     bx lr
