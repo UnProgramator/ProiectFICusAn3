@@ -22,24 +22,21 @@ hufapp:
     //            j     -> r5
     
     push {lr}
-    push {r6-r8}
-    ldr r4, [r3, r0] //;k = index[i]
-    
-    mov r8, r2 // r8 <- copy of n
-    lsr r8, #1
+    push {r4-r8}
+    ldr r4, [r3, r0, lsl #2] //;k = index[i]
     
     //;while i <= (n >> 1)
     while: 
+        lsr r2, #1
         cmp r3, r8 // i <= (n >> 1) 
         bgt end
         
         //if (j = i<<1) < n && (nprob[index[j]] > nrpob[index[j+1]])
         //(j = i<<1) < n
-        mov r5, r3 // j = i
-        lsl r5, #1 // j = i << 1
+        lsl r5, r3, #1 // j = i << 1
         cmp r5, r2 // j < n
         bge fi1
-        //(nprob[index[j]] > nrpob[index[j+1]])
+        //if (nprob[index[j]] > nrpob[index[j+1]])
         ldr r6, [r0,r5, lsl #2] //index[j]
         ldr r6, [r1,r6, lsl #2] //nprob[index[j]]
         add r5, #1 //j++
@@ -62,12 +59,12 @@ hufapp:
         ldr r7, [r0,r5, lsl #2] //r7 <- index[j]
         str r7, [r0,r3, lsl #2] //r7 -> index[i]
         mov r3, r5      //i = j
-        
+        b while
     end:
     
     str r4, [r0,r3, lsl #2] // index[i] = k
     
-    pop {r6-r8}
+    pop {r4-r8}
     pop {lr}
     bx lr
 //end of hufapp

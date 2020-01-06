@@ -1,8 +1,10 @@
 .global _start
 
+.extern write_word
 .extern write_str
 .extern write_byte
 .extern lvector
+.extern alloc
 
 .extern hufmak
 .extern hufend
@@ -10,15 +12,17 @@
 
 .data
 .balign 4
+    t_decodat: .asciz "testul ce urmeaza sa fie codificat: "
+    t_encodul: .asciz "textul codificat: "
+    t_decodul: .asciz "textul decodificat: "
     text_de_codat: .asciz "huffman code is cool"
     tabel: .asciz "acdefhlmnou "
     nfreq: .word 1, 2, 1, 1, 2, 1, 1, 1, 1, 3, 1, 1
     nchin: .word 12
     
-    ilong: .word
-    nlong: .word
+    ilong: .word 0
+    nlong: .word 0
     
-    text_decodat: .skip 100
     new_line: .asciz "\r\n"
     MQ: .word 1024
 	huffcode: .skip 24
@@ -33,13 +37,17 @@
     
 .text
 _start:
-    ldr r5, =MQ
-    ldr r6, =huffcode
+    LDR     SP, =stack_top
     
+    ldr r0, =t_decodat
+    bl write_str
     ldr r0, =text_de_codat
     bl write_str
     ldr r0, =new_line
     bl write_str
+    
+    ldr r5, =MQ
+    ldr r6, =huffcode
     
     //huffcode.icod = (long*)lvector(1, MQ)
     mov r0, #1
@@ -47,12 +55,7 @@ _start:
     bl lvector
     str r0, [r6]
     
-    ldr r0, =tabel
-    bl write_str
-    ldr r0, =new_line
-    bl write_str
-    
-    //huffcode.ncod = (long*)lvector(1, MQ)
+     //huffcode.ncod = (long*)lvector(1, MQ)
     mov r0, #1
     ldr r1, [r5]
     bl lvector
@@ -81,10 +84,13 @@ _start:
     
     ldr r0, =ilong
     ldr r0, [r0]
-    bl write_byte
+    bl write_word
+    
+    ldr r0, =new_line
+    bl write_str
     
     ldr r0, =nlong
     ldr r0, [r0]
-    bl write_byte
+    bl write_word
     
     b .

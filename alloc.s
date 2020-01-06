@@ -7,6 +7,9 @@
 .global ralloc
 .type global, %function
 
+.extern write_str
+.extern write_word
+
 .data 
 .balign 4
 stackp: .word 0
@@ -18,7 +21,6 @@ heapspace: .skip 65536 //;spatiul pentru memoria heap
 
 .text
 alloc: //;r0 -nr de biti de alocat si rezultatul returnat
-    push {lr}
     ldr r1, =memspace
     ldr r2, [r1]
     cmp r0, r2
@@ -26,7 +28,7 @@ alloc: //;r0 -nr de biti de alocat si rezultatul returnat
     
     mov r0, #0 //;daca nu mai am memorie suficienta
     b fin
-
+    
     if_not: //am memorie
         add r2, r0
         str r2, [r1]
@@ -39,8 +41,8 @@ alloc: //;r0 -nr de biti de alocat si rezultatul returnat
         mov r0, r1
         
     fin:
-        pop {lr}
         bx lr
+        
 //end of alloc
 
 ralloc:
@@ -80,16 +82,16 @@ ralloc:
     
     pop {lr}
     bx lr
-    
-lvector:
-    push {lr}
-    // no_start -> r0
-    // no_fin   -> r1
-    
+//end of ralloc
+
+lvector:// no_start -> r0
+        // no_fin   -> r1
+    push {lr}    
     push {r0}
     
     sub r0, r1, r0 // r0 = no_fin - no_start
     lsl r0, #2
+    
     bl alloc
     
     mov r1, r0
