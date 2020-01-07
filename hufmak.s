@@ -66,8 +66,8 @@ for1:
 	bgt endfor1
 	
 	//nprob[j]=nfreq[j]
-	ldr r1, [r0,+r6]
-	str r1, [r11,+r6]
+	ldr r1, [r0,+r6, lsl #2]
+	str r1, [r11,+r6, lsl #2]
 	
 	//if (nfreq[j]) index[++nused]=j
 	cmp r1,#0
@@ -83,7 +83,7 @@ endif1:
 
 	add r6,#1
 	B for1
-endfor1:
+endfor1: //pana aici e ok !!!!!!
 	
 	//for (j=nused;j>=1;j--) hufapp(index,nprob,nused,j);
 	mov r6,r8
@@ -154,12 +154,14 @@ while1:
 	bl hufapp
     
 	b while1
-endwhile1:
+endwhile1: //verificat !!!!!!!!!!
    
 	//up[hcode->nodemax=k]=0;
-	ldr r7,[r4, #+20]
+	ldr r1,[r4, #+20]
+	str r7, [r1]
 	mov r0,#0
-	ldr r0,[r9, +r7, LSL #2]
+	ldr r1, [r9, +r7, LSL #2]
+	str r0, [r1]
 	
 	//for (j=1;j<=hcode->nch;j++) 
 	mov r6,#1
@@ -168,19 +170,19 @@ for3:
 	cmp r6,r12
 	bgt endfor3
 	//if (nprob[j])
-	ldr r12,[r1, +r6, LSL #2]
-	cmp r0,r12
+	ldr r12,[r11, +r6, LSL #2]
+	cmp r12, #0
 	bne endif2
 	
 	//for (n=0,ibit=0,node=up[j];node;node=up[node],ibit++)
-	mov r1,#0	//n in r1
+	mov r1,#0	// n in r1
 	mov r2,#0	// ibit in r2
 	ldr r5, [r9,+r6, LSL #2]
 for4:
-	cmp r5,r0
+	cmp r5,#0
 	bne endfor4
 	//if (node < 0)
-	cmp r5,r0
+	cmp r5,#0
 	bge endif3
 	//n |= setbit[ibit];
 	ldr r3, =setbit
@@ -188,6 +190,7 @@ for4:
 	orr r1,r12
 	
 	//node = -node;
+	mov r0, #0
 	sub r5,r0,r5
 endif3:
 	ldr r5, [r9, +r5, LSL #2]
@@ -203,11 +206,13 @@ endfor4:
 endif2:
 	add r6,#1
 	b for3
-endfor3:
+endfor3: //pana aici e ok !!!!!!!!!!!!!!!!!!!
+
 	// *nlong=0;
 	//ldr r3,[sp,#+20] //----------------------------------------------------------------------
-	pop {r3}
-	pop {r2}
+	pop {r3} // *nlong
+	pop {r2} // *ilong
+	mov r0, #0
 	str r0,[r3]
 	
 	//for (j=1;j<=hcode->nch;j++)
