@@ -12,6 +12,7 @@
 setbit: .word   0x1, 0x2, 0x4, 0x8,0x10, 0x20, 0x40, 0x80,0x100, 0x200, 0x400, 0x800,0x1000, 0x2000, 0x4000, 0x8000,0x10000, 0x20000, 0x40000, 0x80000,0x100000, 0x200000, 0x400000, 0x800000,0x1000000, 0x2000000, 0x4000000, 0x8000000,0x10000000, 0x20000000, 0x40000000, 0x80000000
 
 
+
 .text 
 hufapp:
     // in ordine *index -> r0
@@ -22,13 +23,13 @@ hufapp:
     //            j     -> r5
     
     push {lr}
-    push {r4-r8}
-    ldr r4, [r3, r0, lsl #2] //;k = index[i]
+    push {r0-r8}
+    ldr r4, [r0, r3, lsl #2] //;k = index[i]
     
     //;while i <= (n >> 1)
     while: 
         lsr r2, #1
-        cmp r3, r8 // i <= (n >> 1) 
+        cmp r3, r2 // i <= (n >> 1) 
         bgt end
         
         //if (j = i<<1) < n && (nprob[index[j]] > nrpob[index[j+1]])
@@ -64,7 +65,7 @@ hufapp:
     
     str r4, [r0,r3, lsl #2] // index[i] = k
     
-    pop {r4-r8}
+    pop {r0-r8}
     pop {lr}
     bx lr
 //end of hufapp

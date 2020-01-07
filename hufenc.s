@@ -3,12 +3,16 @@
 .extern write_str
 .extern setbit [data]
 .extern ralloc
+.extern write_word
+.extern new_line
 
+.data
 .balign 4
 wordmessage1: .asciz "ich out of range in hufenc.\r\n"
 wordmessage2: .asciz "Reached the esnd of the code array.\r\n"
 wordmessage3: .asciz "Attempting to expand it's size.\r\n"
-wordmessage4: .asciz "Size expansion failed.\r\n"
+wordmessage4: .asciz "Size expansion failed.\r\n  "
+
 
 /*struct{
 *icod - 0
@@ -35,7 +39,7 @@ hufenc:
     push {r5-r10}
     
     //k=ich+1
-    add r5, r1, #1
+    add r5, r0, #1
     
     //if (k>hcode->nch || k<1) nerror("ich out of range in hufenc.");
     ldr r6, [r4, #16]
@@ -44,10 +48,11 @@ hufenc:
     cmp r5, #1
     bge not1
     true1: //if true
-        push {r0-r4}
         ldr r0, =wordmessage1
         bl write_str
-        pop {r0-r4}
+        pop {r5-r10}
+        pop {lr}
+        bx lr
     not1:
     
     //for n=hcode->ncode[k]-1
@@ -106,7 +111,7 @@ hufenc:
     bne not2
         ldr r10, [r1]
         mov r9, #0
-        str r9, [r10, r7, lsl #2]
+        strb r9, [r10, r7, lsl #2]
     not2:
     
     // if hcode->icode[k] & setbit[n] then (*codep)[n] |= setbit[l]
@@ -118,12 +123,12 @@ hufenc:
     cmp r9, #0
     beq not3
         ldr r9, [r1]
-        ldr r9, [r9, r7, lsl #2]
+        ldrb r9, [r9, r7, lsl #2]
         ldr r10, =setbit
         ldr r10, [r0, r8, lsl #2]
         orr r9, r9, r10
         ldr r10, [r1]
-        str r9, [r10, r7, lsl #2]
+        strb r9, [r10, r7, lsl #2]
     not3:
     
     increment:
@@ -136,8 +141,12 @@ hufenc:
     
     end_for:
     
+    /*ldr r0, =message
+    bl write_str*/
+    
     pop {r5-r10}
     pop {lr}
+    
     bx lr
     
     

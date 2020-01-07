@@ -21,6 +21,7 @@ heapspace: .skip 65536 //;spatiul pentru memoria heap
 
 .text
 alloc: //;r0 -nr de biti de alocat si rezultatul returnat
+    push {r1-r2}
     ldr r1, =memspace
     ldr r2, [r1]
     cmp r0, r2
@@ -41,6 +42,7 @@ alloc: //;r0 -nr de biti de alocat si rezultatul returnat
         mov r0, r1
         
     fin:
+    pop {r1-r2}
         bx lr
         
 //end of alloc
