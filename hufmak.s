@@ -207,6 +207,7 @@ endfor3:
 	// *nlong=0;
 	//ldr r3,[sp,#+20] //----------------------------------------------------------------------
 	pop {r3}
+	pop {r2}
 	str r0,[r3]
 	
 	//for (j=1;j<=hcode->nch;j++)
@@ -217,25 +218,23 @@ for5:
 	bgt endfor5
 	//if (hcode->ncod[j] > *nlong)
 	ldr r1,[r4,#+4]
-	ldr r2,[r1, +r6, LSL #2]
+	ldr r10,[r1, +r6, LSL #2]
 	ldr r12,[r3]
 	
-	cmp r2, r12
+	cmp r10, r12
 	ble endif4
 	// *nlong=hcode->ncod[j];
-	str r2, [r3]
+	str r10, [r3]
 	
 	// *ilong=j-1;
 	sub r0, r6, #1
 	//ldr r2, [sp, #16] //-----------------------------------------------------------------------
-	pop {r2}
 	str r0, [r2]
 
 endif4:	
 	add r6,#1
 	b for5
 endfor5:
-	
-	
+
 	ldmia sp!, {r0-r12,pc}  //push r0-r1,pc ; restaureaza reg si return
 	
