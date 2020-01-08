@@ -103,3 +103,19 @@ lvector:// no_start -> r0
     pop {lr}
     bx lr
 //end of lvector
+
+make0:
+    push {r0-r12,lr}
+    
+    mov r0, #0
+    
+    lop_make0:
+        cmp r1,r2
+        bgt end_make0
+        str r0, [r1]
+        add r1, #4
+        
+    end_make0:
+    
+    pop {r0-r12,lr}
+    bx  lr

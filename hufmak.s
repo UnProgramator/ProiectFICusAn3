@@ -1,245 +1,306 @@
 .global hufmak
 
-
-.extern write_str
-.extern write_word
 .extern setbit[data]
 .extern hufapp
-.extern alloc
+.extern lvector
+
+.extern afis_vector
+.extern afis_hcode
+.extern write_byte
+.extern write_str
 
 .data
 .balign 4
-n: .word 0
+new_line: .asciz "\n\r"
 
-/*setbit: .word   0x1, 0x2, 0x4, 0x8,0x10, 0x20, 0x40, 0x80,0x100, 0x200, 0x400, 0x800,0x1000, 0x2000, 0x4000, 0x8000,0x10000, 0x20000, 0x40000, 0x80000,0x100000, 0x200000, 0x400000, 0x800000,0x1000000, 0x2000000, 0x4000000, 0x8000000,0x10000000, 0x20000000, 0x40000000, 0x80000000*/
+/*struct{
+    *icod - 0
+    *ncod -4
+    *left -8
+    *right-12
+    nch-16
+    nodemax-20
+    }huffcode*/
+    
+    
 .text
 hufmak:
-	//; in ordine nfreq[] -> r0 -> [sp+8]
-	//;			  nchin -> r1 -> [sp+12]
-	//;			  *ilog -> r2 -> [sp+16]
-	//; 		  *nlog -> r3 -> [sp+20]
-	//;			  *hcode -> r4 -> [sp+24]
-	//;					node	-> r5
-	//;					j		-> r6
-	//;					k		-> r7
-	//;					nused	-> r8
-	//;					*up		-> r9
-	//;					*index	-> r10
-	//;					*nprob	-> r11
-	//;					ibit	-> [sp] -> r1
-	//;					n		-> [sp+4] ->r2
-	stmdb sp!, {r0-r12,lr}  //push r0-r12,lr
-	//sub sp,sp,#8		   //rezervam 2 locati pt ibit, n
-	str r1,[r4, #+16] //hcode->nch=nchin;
+	/*@param    nfreq word* -> r0
+                nchin word  -> r1
+                ilong word* -> r2
+                nlong word* -> r3
+                hcode word* -> r4
+        
+	  @local    ibit    word  -> variabil
+                node    word  -> variabil
+                up      word* -> r6
+                j       word  -> variabil
+                k       word  -> variabil
+                index   word* -> r5
+                n       word  -> variabil
+                nused   word  -> r8
+                nprob   word* -> r7
+	*/
 	
-	push {r2}
-	push {r3}
-	push {r0}
-	//index=lvector(1,(long)(2*hcode->nch-1))
-	mov r0, r1  // aloca 4 byte in plus ----------------------------------------------------
-	lsl r0,#3   // 2* nchin *4byte/word
-	bl alloc 
-	mov r10,r0
+	push {lr}
+	//setare hcode->nch si alocare vectori
+	push {r0-r4}
+	str r1, [r4, #16]
 	
-	//up=(long *)lvector(1,(long)(2*hcode->nch-1)); 
-	mov r0, r1    // aloca 4 byte in plus  ---------------------------------------------------------
-	lsl r0,#3
-	bl alloc 
-	mov r9,r0
+	lsl r4, r1, #1 // r4 -> 2*hcode->nch
 	
-	//nprob=lvector(1,(long)(2*hcode->nch-1));
-	mov r0, r1  // aloca 4 byte in plus -------------------------------------------------------
-	lsl r0,#3 
-	bl alloc  
-	mov r11,r0
+	mov r0, #1
+	mov r1, r4
+	bl lvector
+	mov r5, r0
 	
-	//for (nused=0,j=1;j<=hcode->nch;j++)
-	mov r8, #0
-	mov r6, #1
-	//ldr r0, [sp, #+8]	// nfreq in r0  ---------------------------------------------------------------
-	pop {r0}
-	ldr r2, [r4] 		// hcode->icod in r2
-	ldr r3, [r4, #+4]	// hcode->ncod in r3
-for1:
-	ldr r12,[r4,#+16]
-	cmp r6,r12
-	bgt endfor1
+	mov r0, #1
+	mov r1, r4
+	bl lvector
+	mov r6, r0
 	
-	//nprob[j]=nfreq[j]
-	ldr r1, [r0,+r6, lsl #2]
-	str r1, [r11,+r6, lsl #2]
+	mov r0, #1
+	mov r1, r4
+	bl lvector
+	mov r7, r0
 	
-	//if (nfreq[j]) index[++nused]=j
-	cmp r1,#0
-	beq endif1
-	add r8,#1
-	ldr r6, [r10, +r8, LSL #2]
+	pop {r0-r4}
 	
-endif1:	
-	//hcode->icod[j]=hcode->ncod[j]=0
-	mov r1,#0
-	str r1,[r3,+r6, LSL #2]
-	str r1,[r2,+r6, LSL #2]
-
-	add r6,#1
-	B for1
-endfor1: //pana aici e ok !!!!!!
+	//primele 2 foruri
 	
-	//for (j=nused;j>=1;j--) hufapp(index,nprob,nused,j);
-	mov r6,r8
-for2:
-	cmp r6,#1
-	blt endfor2
-	mov r0,r10
-	mov r1,r11
-	mov r2,r8
-	mov r3,r6
-	bl hufapp
-	sub r6,r6,#1 
-	b for2
-endfor2:
-	//k=hcode->nch;
-	ldr r7, [r4,#+16]
 	
-	//while (nused > 1)
-while1:
-	cmp r8, #1
-	ble endwhile1
+	mov r8, #0 //nused = 0
+	mov r9, #1 //j=1
 	
-	//node=index[1];
-	ldr r5, [r10,#+4]
-	
-	//index[1]=index[nused--];
-	ldr r0, [r10, +r8, LSL #2]
-	str r0, [r10,#+4]
-	sub r8, #1
-	
-	//hufapp(index,nprob,nused,1);
-	mov r0,r10
-	mov r1,r11
-	mov r2,r8
-	mov r3,#1
-	bl hufapp
-	
-	//nprob[++k]=nprob[index[1]]+nprob[node];
-	add r7,#1
-	ldr r0,[r10,#+4]    		// index[1] in r0
-	ldr r1,[r11,+r0, LSL #2]
-	ldr r12,[r11, +r5, LSL #2]
-	add r1,r1,r12
-	str r1, [r11, +r7, LSL #2]
-	
-	//hcode->left[k]=node;
-	ldr r1, [r4, #+8]
-	str r5, [r1, +r7, LSL #2]
-		
-	//hcode->right[k]=index[1];
-	ldr r1, [r4, #+12]
-	str r0, [r1, +r7, LSL #2]
-	
-	//up[index[1]] = -(long)k;
-	mov r1,#0
-	sub r1,r7
-	str r1, [r9, r0, LSL #2]
-	
-	//up[node]=index[1]=k;
-	str r7, [r10,#+4]
-	str r7, [r9, +r5, LSL #2]
-	
-	//hufapp(index,nprob,nused,1);
-	mov r0,r10
-	mov r1,r11
-	mov r2,r8
-	mov r3,r6
-	bl hufapp
+	for1:
+        cmp r9, r1 //  j <= nchin = hcode->nch
+        bgt end_for1
+        
+        //nprob[j] = nfreq[j]
+        ldr r10, [r0, r9, lsl #2]
+        str r10, [r7, r9, lsl #2]
+        
+        //if nfreq[j]!=0 
+        cmp r10, #0
+        beq else1
+        //then index[++nused] = j
+            add r8, #1
+            str r9, [r5, r8, lsl #2]
+        else1:
+        
+        //hcode->icod[j] = hcode->ncode[j] = 0
+        mov r11, #0
+        ldr r12, [r4]
+        str r11, [r12, r9, lsl #2] //icod[j]=0
+        ldr r12, [r4, #4]
+        str r11, [r12, r9, lsl #2] //ncode[j]=0
+        
+        add r9, #1 //j++
+        b for1
+    end_for1:
     
-	b while1
-endwhile1: //verificat !!!!!!!!!!
-   
-	//up[hcode->nodemax=k]=0;
-	ldr r1,[r4, #+20]
-	str r7, [r1]
-	mov r0,#0
-	ldr r1, [r9, +r7, LSL #2]
-	str r0, [r1]
+    /*push {r0-r8} //debuging
+    
+    add r0, #4
+    bl afis_vector
+    
+    mov r0, r7
+    add r0, #4
+    bl afis_vector
+    
+    mov r0, r5
+    add r0, #4
+    bl afis_vector
+    
+    pop {r0-r8}*/ //pana aici e ok
+    
+    push {r0-r8}
+    mov r9, r8 // j=nused
+    
+    for2: 
+        cmp r9, #1
+        blt end_for2
+        
+        mov r0, r5
+        mov r1, r7
+        mov r2, r8
+        mov r3, r9
+        bl hufapp
+        
+        sub r9, #1
+        b for2
 	
-	//for (j=1;j<=hcode->nch;j++) 
-	mov r6,#1
-for3:
-	ldr r12,[r4, #+16]
-	cmp r6,r12
-	bgt endfor3
-	//if (nprob[j])
-	ldr r12,[r11, +r6, LSL #2]
-	cmp r12, #0
-	bne endif2
+	end_for2:
+	pop {r0-r8}
 	
-	//for (n=0,ibit=0,node=up[j];node;node=up[node],ibit++)
-	mov r1,#0	// n in r1
-	mov r2,#0	// ibit in r2
-	ldr r5, [r9,+r6, LSL #2]
-for4:
-	cmp r5,#0
-	bne endfor4
-	//if (node < 0)
-	cmp r5,#0
-	bge endif3
-	//n |= setbit[ibit];
-	ldr r3, =setbit
-	ldr r12,[r3, +r2, LSL #2]
-	orr r1,r12
-	
-	//node = -node;
-	mov r0, #0
-	sub r5,r0,r5
-endif3:
-	ldr r5, [r9, +r5, LSL #2]
-	add r2,#1
-endfor4:
-	//hcode->icod[j]=n;
-	ldr r3, [r4]
-	str r1, [r3, +r6, LSL #2]
-	
-	//hcode->ncod[j]=ibit;
-	ldr r3, [r4,#+4]
-	str r2, [r3, +r6, LSL #2]
-endif2:
-	add r6,#1
-	b for3
-endfor3: //pana aici e ok !!!!!!!!!!!!!!!!!!!
+	//k = nchin == hcode->nch
+    mov r9, r1
+    
+    push {r0-r8}
+    
+    //r0-r3 liber de folosit - parametrii la functie
+    //r4-r9 ocupati
+    //r10-r12 liberi de folosit
+    
+    //r10 - node in while
+    
+    //while nused > 1
+    while:
+        cmp r8, #1
+        ble end_while
+        
+        //node = index[1]
+        ldr r10, [r5, #4]
+        
+        //index[1] = index[nused--]
+        ldr r0, [r5, r8, lsl #2]
+        str r0, [r5, #4]
+        sub r8, #1
+        
+        //hufapp(index, nprob, nused, 1)
+        mov r0, r5
+        mov r1, r7
+        mov r2, r8
+        mov r3, #1
+        bl hufapp
+        
+        //nprob[++k] = nprob[index[1]] + nprob[node]
+        add r9, #1 //++k
+        ldr r0, [r5, #4] //index[1]
+        ldr r1, [r7, r0, lsl #2]
+        ldr r2, [r7, r10, lsl #2]
+        add r1, r2
+        str r1, [r7, r9, lsl #2]
+        
+        //hcode->left[k] = node
+        ldr r1, [r4, #8]
+        str r10, [r1, r9, lsl #2]
+        
+        //hcode->right[k] = index[1]
+        ldr r1, [r4, #12]
+        str r0, [r1, r9, lsl #2]
+        
+        // up[index[1]]] = -k
+        // up[node] = index[1] = k
+        mov r1, #0
+        sub r1, r9
+        str r1, [r6, r0, lsl #2]
+        str r9, [r6, r10, lsl #2]
+        str r9, [r5, #4]
+        
+        //hufapp(index, nprob, nused, 1)
+        mov r0, r5
+        mov r1, r7
+        mov r2, r8
+        mov r3, #1
+        bl hufapp
+        
+        b while
+    end_while:
+    
+    pop {r0-r8}
+    
+    //up[ hcode->nodemax = k] = 0
+    str r9, [r4, #20]
+    mov r11, #0
+    str r11, [r6, r9, lsl #2] //up[k]=0
+    
+    //r4-r8 ocupati
+    //r0-r3, r9-r12 liberi
+    push {r0-r8}
+    //j=1
+    mov r9, #1 // j-> r9
+    
+    for3://for j=1 to j<=hcode->nch = nchin = r1
+        cmp r9, r1
+        bgt end_for3
+        
+        //if nprob[j]
+        ldr r0, [r7, r9, lsl #2]
+        cmp r0, #0
+        beq else2
+            
+            //for n=0, ibit=0, node=up[j] to node!=0 do node=up[node], ibit++
+            mov r10, #0              //n    -> r10
+            mov r11, #0              //ibit -> r11
+            ldr r0, [r6, r9, lsl #2] //node -> r0
+            
+            
+            
+            for4:
+                cmp r0, #0
+                beq end_for4
+                
+                //if node < 0
+                cmp r0, #0
+                bge else3
+                
+                    ldr r12, =setbit
+                    ldr r12, [r12, r11, lsl #2]
+                    orr r10, r10, r12
+                    mov r3, #0
+                    sub r0, r3, r0
+                
+                else3:
+                ldr r0, [r6, r0, lsl #2]
+                add r11, #1 //ibit++
+                b for4
+            end_for4:
+        
+            //hcode->icod[j] = n
+            //hcode->ncode[j] = ibit
+            
+            ldr r0, [r4]
+            str r10, [r0, r9, lsl #2]
+            
+            ldr r0, [r4, #4]
+            str r11, [r0, r9, lsl #2]
+            else2:
+        add r9, #1
+        b for3
+    end_for3:
+    
+    
+    pop {r0-r8}
+    
+    // *nlong = 0
+    mov r9, #0
+    str r9, [r3]
+    
 
-	// *nlong=0;
-	//ldr r3,[sp,#+20] //----------------------------------------------------------------------
-	pop {r3} // *nlong
-	pop {r2} // *ilong
-	mov r0, #0
-	str r0,[r3]
+    
+    //for j=1 to j <= hcode->nch == nchin -> r1
+    mov r9, #1
+    for5:
+        cmp r9, r1
+        bgt end_for5
+        
+        //if hcode -> ncode[j] > *nlong
+        ldr r10, [r4, #4] //hcode->ncode
+        ldr r11, [r10, r9, lsl #2]
+        ldr r12, [r3]
+        cmp r11, r12
+        ble else4
+            str r11, [r3]
+            sub r11, r9, #1
+            str r11, [r2]
+        else4:
+        
+        add r9, #1
+        b for5
+    end_for5:
+    
+    
+	pop {lr}
+	bx lr
 	
-	//for (j=1;j<=hcode->nch;j++)
-	mov r6,#1
-for5:
-	ldr r12,[r4,#+16]
-	cmp r6,r12
-	bgt endfor5
-	//if (hcode->ncod[j] > *nlong)
-	ldr r1,[r4,#+4]
-	ldr r10,[r1, +r6, LSL #2]
-	ldr r12,[r3]
 	
-	cmp r10, r12
-	ble endif4
-	// *nlong=hcode->ncod[j];
-	str r10, [r3]
 	
-	// *ilong=j-1;
-	sub r0, r6, #1
-	//ldr r2, [sp, #16] //-----------------------------------------------------------------------
-	str r0, [r2]
-
-endif4:	
-	add r6,#1
-	b for5
-endfor5:
-
-	ldmia sp!, {r0-r12,pc}  //push r0-r1,pc ; restaureaza reg si return
+	
+	
+	
+	
+	
+	
+	
 	

@@ -6,11 +6,16 @@
 .extern write_byte
 .extern lvector
 .extern alloc
-
+.extern appcode
+.extern afis_hcode
+.extern afis_vector
+.extern afis_vector_byte
+.extern aloc_test
 
 .extern hufmak
-.extern hufend
+.extern hufenc
 .extern hufdec
+
 
 .data
 .balign 4
@@ -20,7 +25,7 @@
     text_de_codat: .asciz "huffman code cool"
     tabel: .asciz "acdefhlmnou "
                 // 01234567890
-    nfreq: .word 1, 2, 1, 1, 2, 1, 1, 1, 1, 3, 1, 1
+    nfreq: .word 0, 1, 2, 1, 1, 2, 1, 1, 1, 1, 3, 1, 1
     nchin: .word 12
     
     ilong: .word
@@ -30,6 +35,8 @@
     lcode: .word 128
     nb: .word 0
     ich: .word
+    
+    text_decodat: .skip 100
     
     new_line: .asciz "\r\n"
     MQ: .word 1024
@@ -48,14 +55,7 @@
     
 .text
 _start:
-    LDR     SP, =stack_top
-    
-    ldr r0, =t_decodat
-    bl write_str
-    ldr r0, =text_de_codat
-    bl write_str
-    ldr r0, =new_line
-    bl write_str
+    ldr SP, =stack_top
     
     ldr r5, =MQ
     ldr r6, =huffcode
@@ -79,24 +79,24 @@ _start:
     bl lvector
     str r0, [r6, #8]
     
-/*    bl write_word
-    ldr r0, =space
-    bl write_str*/
-    
     //huffcode.right = (long*)lvector(1, MQ)
     mov r0, #1
     ldr r1, [r5]
     bl lvector
     str r0, [r6, #12]
     
-/*    bl write_word
+    ldr r0, =t_decodat
+    bl write_str
+    
     ldr r0, =space
-    bl write_str*/
+    bl write_str
     
-/*    ldr r0, =new_line
-    bl write_str*/
+    ldr r0, =text_de_codat
+    bl write_str
     
-    //hufmak(nfreq, nchin, &ilong, &nlong, hufcode)
+    ldr r0, =new_line
+    bl write_str
+    
     ldr r0, =nfreq
     ldr r1, =nchin
     ldr r1, [r1]
@@ -104,49 +104,15 @@ _start:
     ldr r3, =nlong
     ldr r4, =huffcode
     bl hufmak
-   
     
-    /*ldr r0, =nlong
-    ldr r0, [r0]
-    bl write_word
-    ldr r0, =space
-    bl write_str
-    ldr r0, =ilong
-    ldr r0, [r0]
-    bl write_word
-    ldr r0, =new_line
-    bl write_str
-    
-    ldr r12, =huffcode
-    ldr r12, [r12, #4]
-    mov r11, #0
-    fir:
-        cmp r11, #30
-        bge nif
-        ldr r0, [r12, r11, lsl #2]
-        //sub r0, #1
-        bl write_word
-        ldr r0, =new_line
-        bl write_str
-        add r11, #1
-        b fir
-    nif:*/
-    
-    
-    //encodeul
+    //encode
     ldr r0, =lcode
     ldr r0, [r0]
     add r0, #1
     bl alloc
     ldr r1, =codep
     str r0, [r1]
-  
-/*     b . */
-    /*
-        for ch in text_de_codat:
-            for ich = pos of ch in tabel
-            hufenc(ich, &codep, &lcode, &nb, &hcode) 
-    */
+    
     mov r10, #0
     ldr r11, =text_de_codat
     for_char:
@@ -173,39 +139,28 @@ _start:
         b for_char
     exit_char:
     
-    /*mov r0, #4
-    bl write_word*/
-    
-    ldr r11, =codep
-    ldr r10, =nb
-    ldr r10, [r10]
-    
-    mov r0, r10
-    bl write_byte
-    
     ldr r0, =t_encodul
     bl write_str
     
-    for_afis_codep:
-        cmp r10, #0
-        beq fin
-        
-        push {r10-r11}
-        ldrb r0, [r11, r10, lsl #2]
-        bl write_byte
-        push {r10-r11}
-        sub r10, #1
-        b for_afis_codep
-    fin:
+    ldr r0, =space
+    bl write_str
     
-    ldr r12, =huffcode
-    ldr r12, [r12, #16] //r2 <- nch
+    ldr r0, =codep
+    ldr r1, =nb
+    ldr r1, [r1]
+    bl afis_vector_byte
+    
+    ldr r0, =new_line
+    bl write_str
+    
+    //decodul
+    
     
     mov r0, #0
     ldr r1, =nb
     str r0, [r1]
     mov r11, #0
-    ldr r10, =text_de_codat
+    ldr r10, =text_decodat
     
     for_dec1:
         ldr r0, =ich
@@ -233,7 +188,52 @@ _start:
     strb r0, [r10, r11]
     ldr r0, =t_decodul
     bl write_str
-    ldr r0, =text_de_codat
+    ldr r0, =text_decodat
     bl write_str
+    
+    /*ldr r0, =new_line //debuging
+    bl write_str
+    
+    ldr r0, =huffcode 
+    bl afis_hcode*/
+    
+    /*ldr r0, =nlong
+    ldr r0, [r0]
+    bl write_word
+    ldr r0, =space
+    bl write_str
+    ldr r0, =ilong
+    ldr r0, [r0]
+    bl write_word
+    ldr r0, =new_line
+    bl write_str
+    
+    ldr r0, =lcode
+    ldr r0, [r0]
+    bl alloc
+    ldr r1, =codep
+    str r0, [r1]
+    
+    ldr r0, =huffcode
+    ldr r0, [r0, #16]
+    bl write_word
+    
+    
+    mov r0, #9
+    ldr r1, =codep
+    ldr r2, =lcode
+    ldr r3, =nb
+    ldr r4, =huffcode
+    bl hufenc
+    
+    ldr r0, =codep
+    mov r1, #10
+    bl afis_vector
+    
+    mov r0, #-1
+    bl write_word
+    
+    ldr r0, =new_line
+    bl write_str*/
     
     b .

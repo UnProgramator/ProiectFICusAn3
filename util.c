@@ -26,7 +26,7 @@ volatile uart_t * const UART0 = (uart_t *) 0x101f1000;
 
 extern void write_str(const char *s);
 extern void write_byte(const uint8_t v);
-extern void write_word(const uint32_t v);
+extern void write_word(const int32_t v);
 extern void *memcpy(void *dest, const void *src, size_t len);
 extern void *memmove (void *dest, const void *src, size_t len);
 extern int memcmp (const void *str1, const void *str2, size_t count);
@@ -59,29 +59,37 @@ void write_byte(const uint8_t v)
 
 }
 
-void write_word(const uint32_t v)
+void write_word(const int32_t v)
 {
-	uint32_t val = v;
+	int32_t val = v;
 	char str[16];
 	uint8_t no_digits = 0;
 	uint8_t i=0;
+    uint8_t b=0;
 	if (val == 0)
 	{
 		UART0->DR = (unsigned int)('0'); 	
 	}
 	else
 	{
+        if(val < 0){
+            b=1;
+            val = -val;
+        }
 		while (val)
 		{
 			str[no_digits] = val % 10;
 			val = val / 10;
 			no_digits++;
 		}
-
+        if(b){
+            UART0->DR = (unsigned int)'-';
+        }
 		for (i=0;i<no_digits;i++)
 		{
 			UART0->DR = (unsigned int)(str[no_digits-1-i]+'0'); 
 		}
+		
 	}
 }
 

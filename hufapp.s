@@ -1,6 +1,6 @@
 .global hufapp
 .global setbit
-/*.global .huffcode*/
+
 
 
 .extern write_str
@@ -9,8 +9,8 @@
 
 .data
 .balign 4
-setbit: .word   0x1, 0x2, 0x4, 0x8,0x10, 0x20, 0x40, 0x80,0x100, 0x200, 0x400, 0x800,0x1000, 0x2000, 0x4000, 0x8000,0x10000, 0x20000, 0x40000, 0x80000,0x100000, 0x200000, 0x400000, 0x800000,0x1000000, 0x2000000, 0x4000000, 0x8000000,0x10000000, 0x20000000, 0x40000000, 0x80000000
-
+setbit: .word   0x1, 0x2, 0x4, 0x8,0x10, 0x20, 0x40, 0x80,0x100, 0x200, 0x400, 0x800, 0x1000, 0x2000, 0x4000, 0x8000, 0x10000, 0x20000, 0x40000, 0x80000, 0x100000, 0x200000, 0x400000, 0x800000, 0x1000000, 0x2000000, 0x4000000, 0x8000000, 0x10000000, 0x20000000, 0x40000000, 0x80000000
+ 
 
 
 .text 
@@ -23,21 +23,21 @@ hufapp:
     //            j     -> r5
     
     push {lr}
-    push {r0-r8}
+    push {r4-r12}
     ldr r4, [r0, r3, lsl #2] //;k = index[i]
     
     //;while i <= (n >> 1)
     while: 
-        lsr r2, #1
-        cmp r3, r2 // i <= (n >> 1) 
+        lsr r6, r2, #1
+        cmp r3, r6 // i <= (n >> 1) 
         bgt end
         
         //if (j = i<<1) < n && (nprob[index[j]] > nrpob[index[j+1]])
         //(j = i<<1) < n
         lsl r5, r3, #1 // j = i << 1
         cmp r5, r2 // j < n
-        bge fi1
-        //if (nprob[index[j]] > nrpob[index[j+1]])
+        bge fi1 
+        //if (nprob[index[j]] > nrpob[index[j+1]]) 
         ldr r6, [r0,r5, lsl #2] //index[j]
         ldr r6, [r1,r6, lsl #2] //nprob[index[j]]
         add r5, #1 //j++
@@ -65,7 +65,7 @@ hufapp:
     
     str r4, [r0,r3, lsl #2] // index[i] = k
     
-    pop {r0-r8}
+    pop {r4-r12}
     pop {lr}
     bx lr
 //end of hufapp
