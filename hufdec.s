@@ -47,7 +47,7 @@ endif1:
 	cmp r7,#0 
 	ldrne r7,[r4,#+12]
 	ldreq r7,[r4,#+8]
-	ldr r5,[r7,+r5]
+	ldr r5,[r7,+r5, lsl #2]
 	
 	//if (node <= hcode->nch)
 	ldr r8,[r4,#+16]
@@ -55,8 +55,8 @@ endif1:
 	bgt loop
 	
 	// *ich=node-1;
-	sub r5,#1
-	str r5, [r0]
+	sub r10,r5,#1
+	str r10, [r0]
 	
 	//return;
 	ldmia sp!, {r0-r8,pc} 

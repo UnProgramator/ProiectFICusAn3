@@ -12,6 +12,7 @@ wordmessage1: .asciz "ich out of range in hufenc.\r\n"
 wordmessage2: .asciz "Reached the esnd of the code array.\r\n"
 wordmessage3: .asciz "Attempting to expand it's size.\r\n"
 wordmessage4: .asciz "Size expansion failed.\r\n  "
+new_line: .asciz "\n\r"
 
 
 /*struct{
@@ -64,9 +65,13 @@ hufenc:
         cmp r6, #0
         blt end_for
     
+    ldr r7, [r3]
+    lsr r7, #3
+    
     //if (++nc >= *lcode)
     add r7, #1
     ldr r8, [r2] //aici incar val lui lcode
+    
     cmp r7, r8
     blt not4
         push {r0-r8}
